@@ -1,0 +1,63 @@
+version: '3.9'
+
+volumes:
+ wp:
+  driver: local
+  name: wp
+  driver_opts:
+   type: none
+   o: bind
+   device: /home/kbulwer/data/wp
+ db:
+  driver: local
+  name: db
+  driver_opts:
+   type: none
+   o: bind
+   device: /home/kbulwer/data/db
+
+networks:
+ custom_net:
+  name: custom_net
+  driver: bridge
+
+services:
+ mariadb:
+  container_name: mariadb
+  image: mariadb
+  build: requirements/mariadb/
+  user: root
+  env_file: .env
+  volumes:
+   - db:/var/lib/mysql
+  restart: always
+  networks:
+   - custom_net
+ wp:
+  container_name: wordpress
+  image: wordpress
+  build: requirements/wordpress/
+  user: root
+  env_file: .env
+  depends_on:
+   - mariadb
+  volumes:
+   - wp:/var/www/html
+  restart: always
+  networks:
+   - custom_net
+ nginx:
+  container_name: nginx
+  image: nginx
+  build: requirements/nginx/
+  user: root
+  volumes:
+   - wp:/var/www/html
+  depends_on:
+   - wp
+  ports:
+   - "443:443"
+  env_file: .env
+  restart: always
+  networks:
+   - custom_net
